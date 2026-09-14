@@ -213,6 +213,9 @@ class QuadTree(TreeMixin):
     @property
     def counts(self) -> T.Dict[str, int]:
         """Get counts of sample occurrences in each quadrant."""
+        if getattr(self, '_counts_cache', None) is not None:
+            return self._counts_cache
+    
         counts: T.Dict[str, int] = {}
         for i, geom in zip(self.tree_ids, self.tree):
             point_int = self.intersection(geom.bounds)
@@ -258,43 +261,33 @@ class QuadTree(TreeMixin):
             thresh (int): The sample threshold to remove a quadrant. Default is 0, or remove a
                 quadrant if it is empty.
         """
-        new_tree_bounds: T.List[namedtuple] = []
-        new_tree_ids: T.List[str] = []
+        new_tree_bounds, new_tree_ids, new_counts = [], [], {}
+        self.contains_null = False
 
         self.contains_null = False
 
-        for qi, quad in enumerate(self.tree):
-            left, bottom, right, top = quad.bounds
+        for qi, (left, bottom, right, top) in enumerate(self.tree_bounds):
+            quad_id = self.tree_ids[qi]
             xcenter = left + (right - left) / 2.0
             ycenter = top - (top - bottom) / 2.0
-
-            quad_id = self.tree_ids[qi]
-            qdict = {
-                # lower left
-                0: (left, bottom, xcenter, ycenter),
-                # upper left
-                1: (left, ycenter, xcenter, top),
-                # lower right
-                2: (xcenter, bottom, right, ycenter),
-                # upper right
-                3: (xcenter, ycenter, right, top),
-            }
+            qdict = {0: (left, bottom, xcenter, ycenter),
+                    1: (left, ycenter, xcenter, top),
+                    2: (xcenter, bottom, right, ycenter),
+                    3: (xcenter, ycenter, right, top)}
 
             for qid, bbox in qdict.items():
                 id_list = self.intersection(bbox)
-                if id_list:
-                    if len(id_list) > thresh:
-                        new_tree_bounds.append(bbox)
-                        new_tree_ids.append(f"{quad_id}{qid}")
-                    else:
-                        self.contains_null = True
-
+                if id_list and len(id_list) > thresh:
+                    new_id = f"{quad_id}{qid}"
+                    new_tree_bounds.append(bbox)
+                    new_tree_ids.append(new_id)
+                    new_counts[new_id] = len(id_list)
                 else:
                     self.contains_null = True
 
         self.tree_bounds = new_tree_bounds
         self.tree_ids = new_tree_ids
-
+        self._counts_cache = new_counts   # <- reuse this
         return self
 
     def split_recursive(
@@ -866,3 +859,52 @@ class Rtree(TreeMixin):
             crs=self.crs,
             columns=[ID_COLUMN],
         )
+
+
+# class QuadTree(QuadTreeOld):
+#     """A class to generate a QuadTree using the ``rtree.index.Index``."""
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+
+#     @property
+#     def counts(self) -> T.Dict[str, int]:
+#         """Get counts of sample occurrences in each quadrant."""
+#         if getattr(self, '_counts_cache', None) is not None:
+#             return self._counts_cache
+    
+#         counts: T.Dict[str, int] = {}
+#         for i, geom in zip(self.tree_ids, self.tree):
+#             point_int = self.intersection(geom.bounds)
+#             if point_int:
+#                 counts[i] = len(point_int)
+
+#         return counts
+    
+#     def split(self, thresh: int = 0) -> "QuadTree":
+#         new_tree_bounds, new_tree_ids, new_counts = [], [], {}
+#         self.contains_null = False
+
+#         for qi, (left, bottom, right, top) in enumerate(self.tree_bounds):
+#             quad_id = self.tree_ids[qi]
+#             xcenter = left + (right - left) / 2.0
+#             ycenter = top - (top - bottom) / 2.0
+#             qdict = {0: (left, bottom, xcenter, ycenter),
+#                     1: (left, ycenter, xcenter, top),
+#                     2: (xcenter, bottom, right, ycenter),
+#                     3: (xcenter, ycenter, right, top)}
+
+#             for qid, bbox in qdict.items():
+#                 id_list = self.intersection(bbox)
+#                 if id_list and len(id_list) > thresh:
+#                     new_id = f"{quad_id}{qid}"
+#                     new_tree_bounds.append(bbox)
+#                     new_tree_ids.append(new_id)
+#                     new_counts[new_id] = len(id_list)
+#                 else:
+#                     self.contains_null = True
+
+#         self.tree_bounds = new_tree_bounds
+#         self.tree_ids = new_tree_ids
+#         self._counts_cache = new_counts   # <- reuse this
+#         return self
