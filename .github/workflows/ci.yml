@@ -14,14 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
       - name: Install libgeos
         run: |
           # Temporary? dpkg fix: https://askubuntu.com/questions/1276111/error-upgrading-grub-efi-amd64-signed-special-device-old-ssd-does-not-exist
@@ -34,7 +33,7 @@ jobs:
           sudo apt install libgeos++-dev libspatialindex-dev -y
       - name: Install pygrts
         run: |
-          pip install .[tests]
+          uv pip install --system .[tests]
       - name: Unittests
         run: |
           python -m unittest

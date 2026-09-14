@@ -1,5 +1,5 @@
 [![](https://img.shields.io/badge/License-MIT-black.svg)](https://lbesson.mit-license.org/)
-[![python](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![python](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![](https://img.shields.io/github/v/release/jgrss/pygrts?display_name=release)](https://github.com/jgrss/pygrts/releases)
 [![](https://github.com/jgrss/pygrts/actions/workflows/ci.yml/badge.svg)](https://github.com/jgrss/pygrts/actions/)
 [![](https://img.shields.io/github/repo-size/jgrss/pygrts)](https://shields.io/category/size)
